@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AQ7 FAV">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>AQ7 FAV</title>
+    <link rel="manifest" href="#" id="manifestLink">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #FF2222;
+            --gold-dim: #CC0000;
+            --bg: #0a0a0a;
+            --card-bg: #141414;
+            --text: #ffffff;
+            --muted: #888;
+            --glow: rgba(255, 34, 34, 0.25);
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: 100dvh;
+            overscroll-behavior: none;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: calc(var(--safe-top) + 12px) 16px 12px;
+            background: linear-gradient(180deg, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.85) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,215,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 12px rgba(255,34,34,0.4));
+            letter-spacing: 0.08em;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .count-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            color: var(--gold);
+            background: rgba(255,215,0,0.1);
+            border: 1px solid rgba(255,215,0,0.3);
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.05em;
+        }
+
+        /* ── MODE TOGGLE ── */
+        .mode-toggle {
+            display: flex;
+            gap: 0;
+            background: rgba(20,20,20,0.9);
+            padding: 4px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,215,0,0.15);
+        }
+
+        .mode-btn {
+            padding: 6px 14px;
+            background: transparent;
+            border: none;
+            border-radius: 30px;
+            color: var(--muted);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(201,169,97,0.2));
+            color: var(--gold);
+        }
+
+        /* ── GRID ── */
+        .grid-container {
+            padding: 3px;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
+        }
+
+        .video-thumb {
+            position: relative;
+            aspect-ratio: 9/16;
+            background: #111;
+            overflow: hidden;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .video-thumb video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .thumb-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.6) 100%);
+            pointer-events: none;
+        }
+
+        .thumb-num {
+            position: absolute;
+            bottom: 5px;
+            left: 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.55rem;
+            color: rgba(255,215,0,0.9);
+            letter-spacing: 0.05em;
+            z-index: 2;
+        }
+
+        .thumb-play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 36px;
+            height: 36px;
+            background: rgba(0,0,0,0.4);
+            border: 1.5px solid rgba(255,215,0,0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s;
+        }
+
+        .thumb-play-icon::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 10px solid var(--gold);
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            margin-left: 2px;
+        }
+
+        /* ── MODAL VIEWER ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        /* swipe animation */
+        .modal-overlay.swipe-left { animation: swipeLeft 0.25s ease forwards; }
+        .modal-overlay.swipe-right { animation: swipeRight 0.25s ease forwards; }
+
+        @keyframes swipeLeft {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-40px); opacity: 0; }
+        }
+
+        @keyframes swipeRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(40px); opacity: 0; }
+        }
+
+        .modal-header {
+            padding: calc(var(--safe-top) + 10px) 16px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+
+        .modal-close {
+            width: 38px;
+            height: 38px;
+            background: rgba(20,20,20,0.8);
+            border: 1px solid rgba(255,215,0,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--gold);
+            font-size: 1.2rem;
+            line-height: 1;
+            transition: background 0.2s;
+        }
+
+        .modal-close:hover { background: rgba(255,215,0,0.15); }
+
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: var(--gold);
+            letter-spacing: 0.08em;
+        }
+
+        .modal-counter {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            color: var(--muted);
+            background: rgba(20,20,20,0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .modal-video-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 0 calc(var(--safe-bottom) + 80px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-video-inner {
+            position: relative;
+            max-width: min(400px, 100vw);
+            max-height: 100%;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .modal-video-inner video {
+            width: 100%;
+            max-height: calc(100dvh - 160px);
+            object-fit: contain;
+            border-radius: 12px;
+            display: block;
+        }
+
+        /* Swipe hint indicator */
+        .swipe-hints {
+            position: absolute;
+            bottom: calc(var(--safe-bottom) + 14px);
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            pointer-events: none;
+        }
+
+        .swipe-btn {
+            pointer-events: all;
+            width: 48px;
+            height: 48px;
+            background: rgba(20,20,20,0.85);
+            border: 1px solid rgba(255,215,0,0.25);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--gold);
+            font-size: 1.1rem;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .swipe-btn:active {
+            background: rgba(255,215,0,0.2);
+            transform: scale(0.92);
+        }
+
+        .swipe-btn:disabled {
+            opacity: 0.25;
+            cursor: default;
+        }
+
+        /* tap to play indicator */
+        .tap-hint {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .tap-hint.show { opacity: 1; }
+
+        .tap-hint-circle {
+            width: 64px;
+            height: 64px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .tap-hint-circle::after {
+            content: '▶';
+            color: var(--gold);
+            font-size: 1.4rem;
+            margin-left: 4px;
+        }
+
+        .tap-hint-circle.paused::after {
+            content: '⏸';
+            margin-left: 0;
+        }
+
+        /* Progress bar */
+        .video-progress-wrap {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 0 0 12px 12px;
+            overflow: hidden;
+        }
+
+        .video-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold), var(--gold-dim));
+            width: 0%;
+            transition: width 0.2s linear;
+        }
+
+        /* Scroll-up-to-close hint */
+        .pull-close-hint {
+            position: absolute;
+            top: 56px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        /* Load more / lazy indicator */
+        .loading-more {
+            text-align: center;
+            padding: 30px;
+            color: var(--muted);
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+        }
+
+        /* PWA install prompt */
+        .install-banner {
+            position: fixed;
+            bottom: calc(var(--safe-bottom) + 10px);
+            left: 10px;
+            right: 10px;
+            background: rgba(20,20,20,0.95);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 16px;
+            padding: 14px 16px;
+            z-index: 500;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+        }
+
+        .install-banner.show { display: flex; }
+
+        .install-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.6rem;
+            color: #000;
+            font-weight: 900;
+            flex-shrink: 0;
+            letter-spacing: 0.03em;
+        }
+
+        .install-text { flex: 1; }
+        .install-text strong { display: block; font-size: 0.85rem; color: var(--text); }
+        .install-text span { font-size: 0.75rem; color: var(--muted); }
+
+        .install-btn {
+            background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .install-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo">AQ7 FAV</div>
+        <div class="header-right">
+            <span class="count-badge" id="totalCount">0 VIDS</span>
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="replayBtn" onclick="setMode('replay')">↻</button>
+                <button class="mode-btn" id="autoNextBtn" onclick="setMode('autoNext')">▶▶</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-container">
+        <div class="video-grid" id="videoGrid"></div>
+        <div class="loading-more" id="loadingMore" style="display:none">Loading...</div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-header">
+            <button class="modal-close" id="modalClose">✕</button>
+            <span class="modal-title">AQ7 FAV</span>
+            <span class="modal-counter" id="modalCounter">#001</span>
+        </div>
+
+        <div class="modal-video-wrapper" id="modalWrapper">
+            <div class="pull-close-hint">TAP TO PLAY/PAUSE</div>
+            <div class="modal-video-inner" id="modalVideoInner">
+                <video id="modalVideo" playsinline preload="auto"></video>
+                <div class="tap-hint show" id="tapHint" onclick="toggleModalPlay()">
+                    <div class="tap-hint-circle" id="tapCircle"></div>
+                </div>
+                <div class="video-progress-wrap">
+                    <div class="video-progress-bar" id="progressBar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="swipe-hints">
+            <button class="swipe-btn" id="prevBtn" onclick="navigateModal(-1)">‹</button>
+            <button class="swipe-btn" id="nextBtn" onclick="navigateModal(1)">›</button>
+        </div>
+    </div>
+
+    <!-- PWA Install Banner -->
+    <div class="install-banner" id="installBanner">
+        <div class="install-icon">AQ7</div>
+        <div class="install-text">
+            <strong>Add to Home Screen</strong>
+            <span>Quick access to your fav vids</span>
+        </div>
+        <button class="install-btn" id="installBtn">Install</button>
+        <button class="install-close" onclick="dismissInstall()">✕</button>
+    </div>
+
+    <script>
+        // ── VIDEOS ──
+        const videos = [
+            "VID67.mp4","VID8.mp4","VID19.mp4","VID9.mp4","VID5.mp4","VID110.mp4","VID7.mp4","VID2.mp4","VID4.mp4","VID10.mp4","VID11.mp4","VID12.mp4","VID13.mp4","VID14.mp4","VID15.mp4","VID16.mp4","VID17.mp4","VID18.mp4","VID3.mp4","VID20.mp4","VID21.mp4","VID22.mp4","VID23.mp4","VID24.mp4","VID25.mp4","VID26.mp4","VID27.mp4","VID28.mp4","VID29.mp4","VID30.mp4","VID31.mp4","VID32.mp4","VID33.mp4","VID34.mp4","VID35.mp4","VID36.mp4","VID37.mov","VID38.mp4","VID39.mp4","VID40.mp4","VID41.mp4","VID42.mp4","VID43.mp4","VID44.mp4","VID45.mp4","VID46.mp4","VID47.mp4","VID48.mp4","VID49.mp4","VID50.mp4","VID51.mp4","VID52.mp4","VID53.mp4","VID54.mp4","VID55.mp4","VID56.mp4","VID57.mp4","VID58.mp4","VID59.mp4","VID60.mp4","VID61.mp4","VID62.mp4","VID63.mp4","VID64.mp4","VID65.mp4","VID66.mp4","VID1.mp4","VID68.mp4","VID69.mp4","VID70.mp4","VID71.mp4","VID72.mp4","VID73.mp4","VID74.mp4","VID75.mp4","VID76.mp4","VID77.mp4","VID78.mp4","VID79.mp4","VID80.mp4","VID81.mp4","VID82.mp4","VID83.mp4","VID84.mp4","VID85.mp4","VID86.mp4","VID87.mp4","VID88.mp4","VID89.mp4","VID90.mp4","VID91.mp4","VID92.mp4","VID93.mp4","VID94.mp4","VID95.mp4","VID96.mp4","VID97.mp4","VID98.mp4","VID99.mp4","VID100.mp4","VID101.mp4","VID102.mp4","VID103.mp4","VID104.mov","VID105.mp4","VID106.mp4","VID107.mp4","VID108.mov","VID109.mp4","VID6.mp4","VID111.mp4","VID112.mp4","VID113.mp4","VID114.mp4","VID115.mp4","VID116.mp4","VID117.mp4","VID118.mp4","VID119.mp4","VID120.mp4","VID121.mp4","VID122.mp4","VID123.mp4","VID124.mp4","VID125.mp4","VID126.mp4","VID127.mp4","VID128.mp4","VID129.mp4","VID130.mp4","VID131.mp4","VID132.mp4","VID133.mp4","VID134.mp4","VID135.mp4","VID136.mp4","VID137.mp4","VID138.mp4","VID139.mp4","VID140.mp4","VID141.mp4","VID142.mp4","VID143.mp4","VID144.mp4","VID145.mp4","VID146.mp4","VID147.mp4","VID148.mp4","VID149.mp4","VID150.mp4","VID151.mp4","VID152.mp4","VID153.mp4","VID154.mp4","VID155.mp4","VID156.mp4","VID157.mp4","VID158.mp4","VID159.mp4","VID160.mp4","VID161.mp4","VID162.mp4","VID163.mp4","VID164.mp4","VID165.mp4","VID166.mp4","VID167.mp4","VID168.mp4","VID169.mp4","VID170.mp4","VID171.mp4","VID172.mp4","VID173.mp4","VID174.mp4","VID175.mp4","VID176.mp4","VID177.mp4","VID178.mp4","VID179.mp4","VID180.mp4","VID181.mp4","VID182.mp4","VID183.mp4","VID184.mp4","VID185.mp4","VID186.mp4","VID187.mp4","VID188.mp4","VID189.mp4","VID190.mp4","VID191.mp4","VID192.mp4","VID193.mp4","VID194.mp4","VID195.mp4","VID196.mp4","VID197.mp4","VID198.mp4","VID199.mp4","VID200.mp4","VID201.mp4","VID202.mp4","VID203.mp4","VID204.mp4","VID205.mp4","VID206.mp4","VID207.mp4","VID208.mp4","VID209.mp4","VID210.mp4","VID211.mp4","VID212.mp4","VID213.mp4","VID214.mp4","VID215.mp4","VID216.mp4","VID217.mp4","VID218.mp4"
+        ];
+
+        // ── STATE ──
+        let playMode = 'replay';
+        let currentModalIndex = -1;
+        let modalIsPlaying = false;
+        let deferredInstallPrompt = null;
+
+        // ── GRID RENDER ──
+        function renderGrid() {
+            const grid = document.getElementById('videoGrid');
+            document.getElementById('totalCount').textContent = videos.length + ' VIDS';
+
+            grid.innerHTML = videos.map((src, i) => `
+                <div class="video-thumb" onclick="openModal(${i})" data-index="${i}">
+                    <video preload="none" muted playsinline>
+                        <source src="${src}">
+                    </video>
+                    <div class="thumb-overlay"></div>
+                    <div class="thumb-play-icon"></div>
+                    <div class="thumb-num">#${String(i+1).padStart(3,'0')}</div>
+                </div>
+            `).join('');
+
+            // Lazy preview thumbnails via IntersectionObserver
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const thumb = entry.target;
+                        const video = thumb.querySelector('video');
+                        if (video && !video.src && !video.querySelector('source[data-loaded]')) {
+                            const src = video.querySelector('source');
+                            if (src) {
+                                video.load();
+                                src.setAttribute('data-loaded', '1');
+                            }
+                        }
+                        observer.unobserve(thumb);
+                    }
+                });
+            }, { rootMargin: '200px' });
+
+            document.querySelectorAll('.video-thumb').forEach(t => observer.observe(t));
+        }
+
+        // ── MODAL ──
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalVideo = document.getElementById('modalVideo');
+        const modalCounter = document.getElementById('modalCounter');
+        const progressBar = document.getElementById('progressBar');
+        const tapHint = document.getElementById('tapHint');
+        const tapCircle = document.getElementById('tapCircle');
+
+        function openModal(index) {
+            currentModalIndex = index;
+            modalOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            loadModalVideo(index);
+            updateNavButtons();
+        }
+
+        function closeModal() {
+            modalVideo.pause();
+            modalVideo.src = '';
+            modalOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+            modalIsPlaying = false;
+            progressBar.style.width = '0%';
+            tapHint.classList.add('show');
+            tapCircle.classList.remove('paused');
+        }
+
+        function loadModalVideo(index) {
+            const src = videos[index];
+            modalVideo.src = src;
+            modalVideo.loop = (playMode === 'replay');
+            modalCounter.textContent = `#${String(index+1).padStart(3,'0')} / ${videos.length}`;
+            progressBar.style.width = '0%';
+            tapHint.classList.add('show');
+            tapCircle.classList.remove('paused');
+            modalIsPlaying = false;
+
+            // Auto-play attempt
+            modalVideo.load();
+            const p = modalVideo.play();
+            if (p) {
+                p.then(() => {
+                    modalIsPlaying = true;
+                    tapHint.classList.remove('show');
+                }).catch(() => {
+                    // Needs user tap
+                });
+            }
+        }
+
+        function toggleModalPlay() {
+            if (modalVideo.paused) {
+                modalVideo.play().then(() => {
+                    modalIsPlaying = true;
+                    tapHint.classList.remove('show');
+                }).catch(() => {});
+            } else {
+                modalVideo.pause();
+                modalIsPlaying = false;
+                tapHint.classList.add('show');
+                tapCircle.classList.add('paused');
+            }
+        }
+
+        modalVideo.addEventListener('timeupdate', () => {
+            if (modalVideo.duration) {
+                progressBar.style.width = (modalVideo.currentTime / modalVideo.duration * 100) + '%';
+            }
+        });
+
+        modalVideo.addEventListener('ended', () => {
+            if (playMode === 'autoNext') {
+                navigateModal(1);
+            }
+        });
+
+        modalVideo.addEventListener('play', () => {
+            tapHint.classList.remove('show');
+            tapCircle.classList.remove('paused');
+            modalIsPlaying = true;
+        });
+
+        modalVideo.addEventListener('pause', () => {
+            tapHint.classList.add('show');
+            tapCircle.classList.add('paused');
+        });
+
+        // Tap on video area (not the icon) to toggle
+        document.getElementById('modalVideoInner').addEventListener('click', (e) => {
+            if (e.target.closest('#tapHint')) return;
+            toggleModalPlay();
+        });
+
+        function navigateModal(dir) {
+            const newIndex = currentModalIndex + dir;
+            if (newIndex < 0 || newIndex >= videos.length) return;
+
+            // Animate
+            const animClass = dir > 0 ? 'swipe-left' : 'swipe-right';
+            modalOverlay.classList.add(animClass);
+            setTimeout(() => {
+                modalOverlay.classList.remove(animClass);
+                currentModalIndex = newIndex;
+                loadModalVideo(newIndex);
+                updateNavButtons();
+            }, 220);
+        }
+
+        function updateNavButtons() {
+            document.getElementById('prevBtn').disabled = currentModalIndex <= 0;
+            document.getElementById('nextBtn').disabled = currentModalIndex >= videos.length - 1;
+        }
+
+        document.getElementById('modalClose').onclick = closeModal;
+
+        // ── SWIPE GESTURES ON MODAL ──
+        let touchStartX = 0, touchStartY = 0;
+
+        modalOverlay.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        modalOverlay.addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+
+            // Swipe down to close
+            if (dy > 80 && absDy > absDx) {
+                closeModal();
+                return;
+            }
+            // Swipe left = next, right = prev
+            if (absDx > 60 && absDx > absDy) {
+                navigateModal(dx < 0 ? 1 : -1);
+            }
+        }, { passive: true });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (!modalOverlay.classList.contains('open')) return;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigateModal(1);
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') navigateModal(-1);
+            if (e.key === 'Escape') closeModal();
+            if (e.key === ' ') { e.preventDefault(); toggleModalPlay(); }
+        });
+
+        // ── MODE ──
+        function setMode(mode) {
+            playMode = mode;
+            document.getElementById('replayBtn').classList.toggle('active', mode === 'replay');
+            document.getElementById('autoNextBtn').classList.toggle('active', mode === 'autoNext');
+            modalVideo.loop = (mode === 'replay');
+        }
+
+        // ── PWA ──
+        // Inline manifest as blob
+        const manifestData = {
+            name: "AQ7 FAV",
+            short_name: "AQ7 FAV",
+            description: "GOATED VIDS CMON ARIYEN",
+            start_url: "./",
+            display: "standalone",
+            background_color: "#0a0a0a",
+            theme_color: "#0a0a0a",
+            orientation: "portrait",
+            icons: [
+                { src: "icon-192.png", sizes: "192x192", type: "image/png" },
+                { src: "icon-512.png", sizes: "512x512", type: "image/png" }
+            ]
+        };
+
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        document.querySelector('link[rel="manifest"]').href = manifestURL;
+
+        // PWA install
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            setTimeout(() => {
+                document.getElementById('installBanner').classList.add('show');
+            }, 3000);
+        });
+
+        document.getElementById('installBtn').onclick = async () => {
+            if (!deferredInstallPrompt) return;
+            deferredInstallPrompt.prompt();
+            const { outcome } = await deferredInstallPrompt.userChoice;
+            if (outcome === 'accepted') dismissInstall();
+        };
+
+        function dismissInstall() {
+            document.getElementById('installBanner').classList.remove('show');
+        }
+
+        window.addEventListener('appinstalled', dismissInstall);
+
+        // ── INIT ──
+        renderGrid();
+    </script>
+</body>
+</html>
